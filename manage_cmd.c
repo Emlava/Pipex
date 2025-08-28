@@ -13,30 +13,14 @@
 #include "pipex.h"
 
 static void	run_abs_path_cmd(char **full_cmd, t_files files_info,
-	char *envp[], int pipe_fds[])
+	char *envp[])
 {
-	int	pid;
-
-	pid = fork();
-	if (pid == -1)
+	if (execve(full_cmd[0], full_cmd, envp) == -1)
 	{
+		managerr(2, full_cmd[0], files_info);
 		free_str_arr(full_cmd);
-		close_pipe(pipe_fds);
-		managerr(3, "fork()", files_info);
+		exit(EXIT_FAILURE);
 	}
-	if (pid == 0) // CHILD
-	{
-		if (execve(full_cmd[0], full_cmd, envp) == -1)
-		{
-			close_pipe(pipe_fds);
-			managerr(2, full_cmd[0], files_info);
-			free_str_arr(full_cmd);
-			exit(EXIT_FAILURE); // This is okay because only the child exits
-		}
-	}
-	else // PARENT // Should I close something (stdin or stdout, which replaced the pipe's ends)
-	// before waiting?
-		wait(NULL);
 	return ;
 }
 
@@ -92,58 +76,35 @@ static int	parse_cmd_str(t_cmd *cmd_info, char *envp[]) // sets full_cmd[0] to t
 }
 
 static void	run_rel_path_cmd(t_cmd cmd_info, t_files files_info,
-	char *envp[], int pipe_fds[])
+	char *envp[])
 {
-	int	pid;
-
-	pid = fork();
-	if (pid == -1)
+	if (execve(cmd_info.full_cmd[0], cmd_info.full_cmd, envp) == -1)
 	{
+		managerr(2, cmd_info.relative_path, files_info);
 		free(cmd_info.relative_path);
 		free_str_arr(cmd_info.full_cmd);
-		close_pipe(pipe_fds);
-		managerr(3, "fork()", files_info);
-	}
-	if (pid == 0) // CHILD
-	{
-		if (execve(cmd_info.full_cmd[0], cmd_info.full_cmd, envp) == -1)
-		{
-			close_pipe(pipe_fds);
-			managerr(2, cmd_info.relative_path, files_info);
-			free(cmd_info.relative_path);
-			free_str_arr(cmd_info.full_cmd);
-			exit(EXIT_FAILURE); // This is okay because only the child exits
-		}
-	}
-	else // PARENT // Should I close something (stdin or stdout, which replaced the pipe's ends)
-	// before waiting?
-	{
-		//
-		//close(STDIN_FILENO); ?
-		//close(STDOUT_FILENO); ?
-		//
-		wait(NULL);
+		exit(EXIT_FAILURE);
 	}
 	return ;
 }
 
-void	manage_cmd(char **full_cmd, t_files files_info, char *envp[], int pipe_fds[])
+void	manage_cmd(char **full_cmd, t_files files_info, char *envp[])
 {
 	t_cmd	cmd_info;
 	int		parsing_error;
 
 	if (ft_strchr(full_cmd[0], '/') != NULL)
-		run_abs_path_cmd(full_cmd, files_info, envp, pipe_fds);
+		run_abs_path_cmd(full_cmd, files_info, envp);
 	else
 	{
 		cmd_info.relative_path = full_cmd[0];
 		cmd_info.full_cmd = full_cmd;
 		parsing_error = parse_cmd_str(&cmd_info, envp);
 		if (!parsing_error)
-			run_rel_path_cmd(cmd_info, files_info, envp, pipe_fds);
+			run_rel_path_cmd(cmd_info, files_info, envp);
 		else if (parsing_error == 3) // Meaning that full_cmd[0] DID change
 			free(cmd_info.relative_path); // This frees original first string of full_cmd;
 	}
 	free_str_arr(full_cmd); // if parse_cmd_str() succeeds, this also frees absolute_path
-	return ;
+	exit(EXIT_FAILURE); // Because if execve() ran we wouldn't have reached here
 }

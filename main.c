@@ -17,6 +17,8 @@ int	main(int ac, char *av[], char *envp[])
 	t_files	files_info;
 	size_t	i;
 	int		pipe_fds[2];
+	int		pid;
+	int		p_prev_read_end;
 
 	if (ac < 5)
 	{
@@ -31,18 +33,34 @@ int	main(int ac, char *av[], char *envp[])
 	while ((int)i < ac - 1)
 	{
 		open_pipe(pipe_fds, files_info);
-		if (i == 2)
-			manage_io(1, &files_info, pipe_fds, &i);
-		if (i >= 5 || (i == 3 && files_info.infile_fd != -1) // cmd2 and infile exists 
-			|| (i == 4 && files_info.infile_fd == -1)) // cmd3 and infile doesn't exist
-			manage_io(2, &files_info, pipe_fds, NULL);
-		if ((int)i != ac - 2)
-			manage_io(3, &files_info, pipe_fds, NULL);
-		else if (manage_io(4, &files_info, pipe_fds, NULL) == 1)
-			break ;
-		manage_cmd(ft_split(av[i], ' '), files_info, envp, pipe_fds); // Manage closing of pipe ends here
-		i++;
-		close_pipe(pipe_fds);
+		pid = fork();
+		if (pid == -1)
+		{
+			close_pipe(pipe_fds);
+			managerr(3, "fork()", files_info);
+		}
+		if (pid == 0) // CHILD
+		{
+			close(pipe_fds[0]);
+			manage_input_src(&files_info, &i, pipe_fds[1], p_prev_read_end);
+			if (manage_output_dst(&files_info, i, ac, pipe_fds[1]) == 1)
+				break ;
+			manage_cmd(ft_split(av[i], ' '), files_info, envp);
+		}
+		else // PARENT
+		{
+			close(pipe_fds[1]);
+			wait(NULL);
+			if (i == 2 && files_info.infile_fd == -1)
+				i = 3;
+			if ((i == 3 && files_info.infile_fd != -1) || (i > 3))
+				close(p_prev_read_end);
+			if ((int)i != ac - 2)
+				p_prev_read_end = pipe_fds[0];
+			else
+				close(pipe_fds[0]);
+			i++;
+		}
 	}
 	close_all_fds(files_info);
 	return (0);

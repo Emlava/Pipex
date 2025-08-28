@@ -12,7 +12,7 @@
 
 #include "pipex.h"
 
-static void instance_1(t_files *files_info, int pipe_fds[], size_t *i, int *errors)
+static void	manage_input_src_start(t_files *files_info, size_t *i, int p_write_end, int *errors)
 {
 	if (files_info->infile_fd != -1)
 	{
@@ -27,11 +27,12 @@ static void instance_1(t_files *files_info, int pipe_fds[], size_t *i, int *erro
 	else
 	{
 		*i = 3;
-		files_info->dev_null_fd = open("/dev/null", O_RDWR);
+		files_info->dev_null_fd = open("/dev/null", O_RDWR); // See later on if we can simply close
+		// the write end and not use /dev/null
 		if (files_info->dev_null_fd == -1)
 		{
 			managerr(2, "/dev/null");
-			close_pipe(pipe_fds);
+			close(p_write_end);
 			exit(EXIT_FAILURE);
 		}
 		if (dup2(files_info->dev_null_fd, STDIN_FILENO) == -1)
@@ -45,87 +46,70 @@ static void instance_1(t_files *files_info, int pipe_fds[], size_t *i, int *erro
 	return ;
 }
 
-static void instance_2(t_files *files_info, int pipe_fds[], int *errors)
+static void	manage_input_src_ongoing(t_files *files_info, int p_prev_read_end, int *errors)
 {
 	if (files_info->dev_null_fd != -1)
 	{
 		close(files_info->dev_null_fd);
 		files_info->dev_null_fd = -1;
 	}
-	if (dup2(pipe_fds[0], STDIN_FILENO) == -1) // We need this every time from cmd2 (i = 3)
-	// if infile exists or from cmd3 (i = 4) if infile doesn't exist
+	if (dup2(p_prev_read_end, STDIN_FILENO) == -1)
 		(*errors)++;
 	else
-	{
-		close(pipe_fds[0]);
-		pipe_fds[0] = -1;
-	}
+		close(p_prev_read_end);
 	return ;
 }
 
-static void	instance_3(int pipe_fds[], int *errors)
+void	manage_input_src(t_files *files_info, size_t *i, int p_write_end, int p_prev_read_end)
 {
-	if (dup2(pipe_fds[1], STDOUT_FILENO) == -1)
-		(*errors)++;
+	int	errors;
+
+	errors = 0;
+	if (*i == 2)
+		manage_input_src_start(files_info, i, p_write_end, &errors);
 	else
+		manage_input_src_ongoing(files_info, p_prev_read_end, &errors);
+	if (errors)
 	{
-		close(pipe_fds[1]);
-		pipe_fds[1] = -1;
+		close(p_prev_read_end);
+		close(p_write_end);
+		managerr(3, "dup2()", *files_info);
 	}
 	return ;
 }
 
-static void instance_4(t_files *files_info, int *errors, int *return_value)
-{
-	if (files_info->outfile_fd != -1)
-	{
-		if (dup2(files_info->outfile_fd, STDOUT_FILENO) == -1)
-			(*errors)++;
-		else
-		{
-			close(files_info->outfile_fd);
-			files_info->outfile_fd = -1;
-		}
-	}
-	else
-		*return_value = 1;
-	return ;
-}
-
-// Instance 1:
-// Manage stdin for the first command if infile exists, or ignore the command
-// if infile doesn't exist by setting the value of i to 3 and setting /dev/null
-// as stdin for the next command.
-//
-// Instance 2:
-// Manage stdin for the second command if infile exists or for the third command
-// if infile doesn't exist; close /dev/null if it's open. Pass NULL as last argument.
-//
-// Instance 3:
-// stdout is set to pipe_fds[1].
-//
-// Instance 4:
-// Manage stdout for the last command if outfile exists, or return 1
-// if outfile doesn't exist. Pass NULL as last argument.
-int	manage_io(int instance, t_files *files_info, int pipe_fds[], size_t *i)
+int	manage_output_dst(t_files *files_info, size_t i, int ac, int p_write_end)
 {
 	int	errors;
 	int	return_value;
 
 	errors = 0;
 	return_value = 0;
-	if (instance == 1)
-		instance_1(files_info, pipe_fds, i, &errors);
-	else if (instance == 2)
-		instance_2(files_info, pipe_fds, &errors);
-	else if (instance == 3)
-		instance_3(pipe_fds, &errors);
-	else if (instance == 4)
-		instance_4(files_info, &errors, &return_value);
+	if ((int)i != ac - 2)
+	{
+		if (dup2(p_write_end, STDOUT_FILENO) == -1)
+			errors++;
+		else
+			close(p_write_end);
+	}
+	else if (files_info->outfile_fd != -1)
+	{
+		{
+			if (dup2(files_info->outfile_fd, STDOUT_FILENO) == -1)
+				errors++;
+			else
+			{
+				close(files_info->outfile_fd);
+				files_info->outfile_fd = -1;
+			}
+		}
+	}
+	else
+		return_value = 1;
 	if (errors)
 	{
-		close_pipe(pipe_fds);
-		managerr(3, "dup2()", files_info);
+		close(p_write_end);
+		managerr(3, "dup2()", *files_info);
 	}
 	return (return_value);
 }
