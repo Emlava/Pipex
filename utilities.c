@@ -20,7 +20,7 @@ void	open_files(t_files *files_info)
 		managerr(1, files_info->outfile_path);
 	files_info->infile_fd = open(files_info->infile_path, O_RDONLY);
 	if (files_info->infile_fd == -1)
-			managerr(1, files_info->infile_path);
+		managerr(1, files_info->infile_path);
 	return ;
 }
 
@@ -50,12 +50,15 @@ void	managerr(int instance, ...)
 	return ;
 }
 
-void	open_pipe(int pipe_fds[], t_files files_info)
+void	open_pipe_and_fork(t_processes *p_resources, t_files files_info)
 {
-	if (pipe(pipe_fds) == -1)
-	{
+	if (pipe(p_resources->pipe_fds) == -1)
 		managerr(3, "pipe()", files_info);
-		close_all_fds(files_info);
+	p_resources->pid = fork();
+	if (p_resources->pid == -1)
+	{
+		close_pipe(p_resources->pipe_fds);
+		managerr(3, "fork()", files_info);
 	}
 	return ;
 }
@@ -73,5 +76,3 @@ void	free_str_arr(char **arr)
 	free(arr);
 	return ;
 }
-
-

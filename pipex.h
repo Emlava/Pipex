@@ -19,6 +19,13 @@
 # include <sys/wait.h>
 # include "libft/libft.h"
 
+typedef struct s_startup
+{
+	int		ac;
+	char	**av;
+	char	**envp;
+}	t_startup;
+
 typedef struct s_files
 {
 	int		infile_fd;
@@ -27,6 +34,13 @@ typedef struct s_files
 	char	*infile_path;
 	char	*outfile_path;
 }	t_files;
+
+typedef struct s_processes
+{
+	int	pipe_fds[2];
+	int	pid;
+	int	prev_read_end;
+}	t_processes;
 
 typedef struct s_cmd
 {
@@ -37,11 +51,11 @@ typedef struct s_cmd
 // *** utilities.c *** //
 void	open_files(t_files *files_info);
 void	managerr(int instance, ...);
-void	open_pipe(int pipe_fds[], t_files files_info);
+void	open_pipe_and_fork(t_processes *p_resources, t_files files_info);
 void	free_str_arr(char **arr);
 
 // *** manage_io.c *** //
-void	manage_input_src(t_files *files_info, size_t *i, int p_write_end, int p_prev_read_end);
+void	manage_input_src(t_files *files_info, size_t *i, t_processes p_resources);
 int		manage_output_dst(t_files *files_info, size_t i, int ac, int p_write_end);
 
 // *** manage_cmd.c *** //

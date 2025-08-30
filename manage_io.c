@@ -60,19 +60,19 @@ static void	manage_input_src_ongoing(t_files *files_info, int p_prev_read_end, i
 	return ;
 }
 
-void	manage_input_src(t_files *files_info, size_t *i, int p_write_end, int p_prev_read_end)
+void	manage_input_src(t_files *files_info, size_t *i, t_processes p_resources)
 {
 	int	errors;
 
 	errors = 0;
 	if (*i == 2)
-		manage_input_src_start(files_info, i, p_write_end, &errors);
+		manage_input_src_start(files_info, i, p_resources.pipe_fds[1], &errors);
 	else
-		manage_input_src_ongoing(files_info, p_prev_read_end, &errors);
+		manage_input_src_ongoing(files_info, p_resources.prev_read_end, &errors);
 	if (errors)
 	{
-		close(p_prev_read_end);
-		close(p_write_end);
+		close(p_resources.prev_read_end);
+		close(p_resources.pipe_fds[1]);
 		managerr(3, "dup2()", *files_info);
 	}
 	return ;
