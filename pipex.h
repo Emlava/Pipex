@@ -56,7 +56,7 @@ void	free_str_arr(char **arr);
 
 // *** manage_io.c *** //
 void	manage_input_src(t_files *files_info, size_t *i, t_processes p_resources);
-int		manage_output_dst(t_files *files_info, size_t i, int ac, int p_write_end);
+void	manage_output_dst(t_files *files_info, size_t i, int ac, int p_write_end);
 
 // *** manage_cmd.c *** //
 void	manage_cmd(char **full_cmd, t_files files_info, char *envp[]);

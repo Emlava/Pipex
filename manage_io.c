@@ -27,8 +27,7 @@ static void	manage_input_src_start(t_files *files_info, size_t *i, int p_write_e
 	else
 	{
 		*i = 3;
-		files_info->dev_null_fd = open("/dev/null", O_RDWR); // See later on if we can simply close
-		// the write end and not use /dev/null
+		files_info->dev_null_fd = open("/dev/null", O_RDWR);
 		if (files_info->dev_null_fd == -1)
 		{
 			managerr(2, "/dev/null");
@@ -78,21 +77,19 @@ void	manage_input_src(t_files *files_info, size_t *i, t_processes p_resources)
 	return ;
 }
 
-int	manage_output_dst(t_files *files_info, size_t i, int ac, int p_write_end)
+void	manage_output_dst(t_files *files_info, size_t i, int ac, int p_write_end)
 {
 	int	errors;
-	int	return_value;
 
 	errors = 0;
-	return_value = 0;
-	if ((int)i != ac - 2)
+	if ((int)i != ac - 2) // If it's not the last command
 	{
 		if (dup2(p_write_end, STDOUT_FILENO) == -1)
 			errors++;
 		else
 			close(p_write_end);
-	}
-	else if (files_info->outfile_fd != -1)
+	}										// If it's the last command and we
+	else if (files_info->outfile_fd != -1) // opened outfile successfully
 	{
 		{
 			if (dup2(files_info->outfile_fd, STDOUT_FILENO) == -1)
@@ -104,12 +101,12 @@ int	manage_output_dst(t_files *files_info, size_t i, int ac, int p_write_end)
 			}
 		}
 	}
-	else
-		return_value = 1;
+	else // It's the last command and no permissions for outfile
+		exit(EXIT_FAILURE);
 	if (errors)
 	{
 		close(p_write_end);
 		managerr(3, "dup2()", *files_info);
 	}
-	return (return_value);
+	return ;
 }

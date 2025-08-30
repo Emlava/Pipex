@@ -14,13 +14,13 @@
 
 void	open_files(t_files *files_info)
 {
+	files_info->infile_fd = open(files_info->infile_path, O_RDONLY);
+	if (files_info->infile_fd == -1)
+		managerr(1, files_info->infile_path);
 	files_info->outfile_fd = open(files_info->outfile_path,
 			O_WRONLY | O_TRUNC | O_CREAT, 00666);
 	if (files_info->outfile_fd == -1)
 		managerr(1, files_info->outfile_path);
-	files_info->infile_fd = open(files_info->infile_path, O_RDONLY);
-	if (files_info->infile_fd == -1)
-		managerr(1, files_info->infile_path);
 	return ;
 }
 
