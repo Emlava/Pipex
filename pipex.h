@@ -52,6 +52,7 @@ typedef struct s_cmd
 void	open_files(t_files *files_info);
 void	managerr(int instance, ...);
 void	open_pipe_and_fork(t_processes *p_resources, t_files files_info);
+int		parse_path_env_var(size_t *i, size_t *j, char *envp[], t_cmd cmd_info);
 void	free_str_arr(char **arr);
 
 // *** manage_input_src.c *** //

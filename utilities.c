@@ -63,6 +63,32 @@ void	open_pipe_and_fork(t_processes *p_resources, t_files files_info)
 	return ;
 }
 
+int	parse_path_env_var(size_t *i, size_t *j, char *envp[], t_cmd cmd_info)
+{
+	*i = 0;
+	*j = 0;
+	while (envp[*i] && ft_strncmp(envp[*i], "PATH=", 5) != 0)
+		(*i)++;
+	if (!envp[*i])
+	{
+		ft_dprintf(2, "pipex: %s: No such file or directory\n",
+			cmd_info.relative_path);
+		return (1);
+	}
+	else
+	{
+		while (envp[*i][*j] && envp[*i][*j] != '/')
+			(*j)++;
+		if (!envp[*i][*j])
+		{
+			ft_dprintf(2, "pipex: %s: No such file or directory\n",
+				cmd_info.relative_path);
+			return (2);
+		}
+	}
+	return (0);
+}
+
 void	free_str_arr(char **arr)
 {
 	size_t	i;
