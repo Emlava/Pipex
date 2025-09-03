@@ -33,6 +33,8 @@ static int	look_for_valid_path(char **possible_paths, t_cmd *cmd_info)
 	while (possible_paths[i])
 	{
 		absolute_path = (ft_strjoin(possible_paths[i], cmd_info->full_cmd[0]));
+		if (!absolute_path)
+			return (1);
 		if (access(absolute_path, X_OK) == 0)
 		{
 			free(cmd_info->full_cmd[0]);
@@ -46,8 +48,7 @@ static int	look_for_valid_path(char **possible_paths, t_cmd *cmd_info)
 	{
 		ft_dprintf(2, "pipex: %s: command not found\n",
 			cmd_info->relative_path);
-		free_str_arr(possible_paths);
-		return (1);
+		return (2);
 	}
 	return (0);
 }
@@ -61,9 +62,15 @@ static int	manage_cmd_str(t_cmd *cmd_info, char *envp[])
 	if (parse_path_env_var(&i, &j, envp, *cmd_info) != 0)
 		return (1);
 	possible_paths = ft_split(&envp[i][j], ':');
-	cmd_info->full_cmd[0] = ft_strjoin("/", cmd_info->full_cmd[0]);
-	if (look_for_valid_path(possible_paths, cmd_info) != 0)
+	if (!possible_paths)
 		return (2);
+	cmd_info->full_cmd[0] = ft_strjoin("/", cmd_info->full_cmd[0]);
+	if (!cmd_info->full_cmd[0]
+		|| look_for_valid_path(possible_paths, cmd_info) != 0)
+	{
+		free_str_arr(possible_paths);
+		return (3);
+	}
 	free_str_arr(possible_paths);
 	return (0);
 }
@@ -95,9 +102,10 @@ void	manage_cmd(char **full_cmd, t_files files_info, char *envp[])
 		str_error = manage_cmd_str(&cmd_info, envp);
 		if (str_error == 0)
 			run_rel_path_cmd(cmd_info, files_info, envp);
-		else if (str_error == 2)
+		else if (str_error == 3)
 			free(cmd_info.relative_path);
 	}
 	free_str_arr(full_cmd);
+	close_all_fds(files_info);
 	exit(EXIT_FAILURE);
 }

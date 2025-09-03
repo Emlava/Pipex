@@ -24,12 +24,19 @@ static void	manage_files(t_files *files_info, t_startup s_resources)
 static void	run_child(t_processes p_resources, t_files *files_info,
 	size_t *i, t_startup s_resources)
 {
+	char	**full_cmd;
+
 	close(p_resources.pipe_fds[0]);
 	manage_input_src(files_info, i, p_resources);
 	manage_output_dst(files_info, *i, s_resources.ac,
 		p_resources.pipe_fds[1]);
-	manage_cmd(ft_split(s_resources.av[*i], ' '), *files_info,
-		s_resources.envp);
+	full_cmd = ft_split(s_resources.av[*i], ' ');
+	if (!full_cmd)
+	{
+		close_all_fds(*files_info);
+		exit(EXIT_FAILURE);
+	}
+	manage_cmd(full_cmd, *files_info, s_resources.envp);
 	return ;
 }
 
