@@ -38,7 +38,6 @@ typedef struct s_files
 typedef struct s_processes
 {
 	int	pipe_fds[2];
-	int	pid;
 	int	prev_read_end;
 }	t_processes;
 
@@ -51,7 +50,7 @@ typedef struct s_cmd
 // *** utilities.c *** //
 void	open_files(t_files *files_info);
 void	managerr(int instance, ...);
-void	open_pipe_and_fork(t_processes *p_resources, t_files files_info);
+int		open_pipe_and_fork(t_processes *p_resources, t_files files_info);
 int		parse_path_env_var(size_t *i, size_t *j, char *envp[], t_cmd cmd_info);
 void	free_str_arr(char **arr);
 

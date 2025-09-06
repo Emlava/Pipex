@@ -1,10 +1,11 @@
 NAME = pipex
 LIBRARY = libft/libft.a
 CC = cc
-FLAGS = -Wall -Wextra -Werror
+FLAGS = -Wall -Wextra -Werror 
 OBJECTS = closing.o main.o manage_cmd.o manage_input_src.o manage_output_dst.o utilities.o
+BONUS_OBJECTS =  closing.o main_bonus.o manage_cmd.o manage_input_src.o manage_output_dst.o utilities.o
 
-.PHONY: all clean fclean re
+.PHONY: all clean fclean re bonus
 
 all: $(NAME)
 
@@ -17,9 +18,12 @@ $(LIBRARY):
 $(NAME): $(LIBRARY) $(OBJECTS)
 	$(CC) $(FLAGS) $(OBJECTS) $(LIBRARY) -o $(NAME)
 
+bonus: $(LIBRARY) $(BONUS_OBJECTS)
+	$(CC) $(FLAGS) $(BONUS_OBJECTS) $(LIBRARY) -o $(NAME)
+
 clean:
 	$(MAKE) -C ./libft clean
-	rm -f $(OBJECTS)
+	rm -f $(OBJECTS) main_bonus.o
 
 fclean: clean
 	$(MAKE) -C ./libft fclean

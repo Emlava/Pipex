@@ -69,7 +69,7 @@ static int	manage_processes(t_startup s_resources, t_files files_info)
 	if (!pids)
 		return (1);
 	pids[s_resources.ac - 3] = -1;
-	while (i < 4)
+	while ((int)i < s_resources.ac - 1)
 	{
 		pids[j] = open_pipe_and_fork(&p_resources, files_info);
 		if (pids[j] == 0)
@@ -91,9 +91,9 @@ int	main(int ac, char *av[], char *envp[])
 	t_files		files_info;
 	int			mp_return_value;
 
-	if (ac != 5)
+	if (ac < 5)
 	{
-		ft_dprintf(2, "pipex: enter exactly 4 arguments\n");
+		ft_dprintf(2, "pipex: at least 4 arguments needed\n");
 		exit(EXIT_FAILURE);
 	}
 	s_resources.ac = ac;

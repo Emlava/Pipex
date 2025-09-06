@@ -50,17 +50,19 @@ void	managerr(int instance, ...)
 	return ;
 }
 
-void	open_pipe_and_fork(t_processes *p_resources, t_files files_info)
+int	open_pipe_and_fork(t_processes *p_resources, t_files files_info)
 {
+	int	pid;
+
 	if (pipe(p_resources->pipe_fds) == -1)
 		managerr(3, "pipe()", files_info);
-	p_resources->pid = fork();
-	if (p_resources->pid == -1)
+	pid = fork();
+	if (pid == -1)
 	{
 		close_pipe(p_resources->pipe_fds);
 		managerr(3, "fork()", files_info);
 	}
-	return ;
+	return (pid);
 }
 
 int	parse_path_env_var(size_t *i, size_t *j, char *envp[], t_cmd cmd_info)
